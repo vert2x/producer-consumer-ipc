@@ -46,16 +46,22 @@ SharedMemory* open_shm(uint32_t payload_size) {
 
         if (shm == MAP_FAILED) { perror("mmap full"); flock(fd, LOCK_UN); close(fd); return nullptr; }
 
+        uint32_t next_generation = 1;
+        if (!need_init) {
+            next_generation = header->generation + 1;
+        }
+
         memset(shm, 0, shm_size(payload_size));
+        shm->generation = next_generation;
         shm->payload_size = payload_size;
         shm->head.store(0);
         shm->tail.store(0);
         sem_init(&shm->data_ready,  /*pshared=*/1, 0);
-        sem_init(&shm->space_ready, /*pshared=*/1, RING_CAPACITY - 1);
+        sem_init(&shm->space_ready, /*pshared=*/1, RING_CAPACITY);
         shm->magic = SHM_MAGIC;   // set last — readiness flag
 
-        printf("[shm] initialized: capacity=%u  payload_size=%u bytes  total=%zu bytes\n",
-               RING_CAPACITY, payload_size, shm_size(payload_size));
+        printf("[shm] initialized: generation=%u  capacity=%u  payload_size=%u bytes  total=%zu bytes\n",
+               shm->generation, RING_CAPACITY, payload_size, shm_size(payload_size));
 
         flock(fd, LOCK_UN);
         close(fd);
@@ -81,10 +87,27 @@ SharedMemory* open_shm(uint32_t payload_size) {
 
     if (shm == MAP_FAILED) { perror("mmap full"); flock(fd, LOCK_UN); close(fd); return nullptr; }
 
-    printf("[shm] attached: capacity=%u  payload_size=%u bytes\n",
-           RING_CAPACITY, existing_payload_size);
+    printf("[shm] attached: generation=%u  capacity=%u  payload_size=%u bytes\n",
+           shm->generation, RING_CAPACITY, existing_payload_size);
 
     flock(fd, LOCK_UN);
     close(fd);
     return shm;
+}
+
+void close_shm(SharedMemory* shm) {
+    if (!shm) {
+        return;
+    }
+
+    munmap(shm, shm_size(shm->payload_size));
+}
+
+bool unlink_shm() {
+    if (shm_unlink(SHM_NAME) != 0) {
+        perror("shm_unlink");
+        return false;
+    }
+
+    return true;
 }
