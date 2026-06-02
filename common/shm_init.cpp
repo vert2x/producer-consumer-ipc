@@ -33,7 +33,7 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
     // At this point, the SHM size is already set (either by us or by the first process)
     // Map only the header first so we can read payload_size
     SharedMemory* header = static_cast<SharedMemory*>(
-        mmap(nullptr, sizeof(SharedMemory), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0));
+        mmap(nullptr, sizeof(SharedMemory), PROT_READ, MAP_SHARED, fd, 0));
 
     if (header == MAP_FAILED) { perror("mmap header"); flock(fd, LOCK_UN); close(fd); return nullptr; }
 
@@ -46,13 +46,7 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
 
         if (shm == MAP_FAILED) { perror("mmap full"); flock(fd, LOCK_UN); close(fd); return nullptr; }
 
-        uint32_t next_generation = 1;
-        if (!need_init) {
-            next_generation = header->generation + 1;
-        }
-
         memset(shm, 0, shm_size(payload_size));
-        shm->generation = next_generation;
         shm->payload_size = payload_size;
         shm->head.store(0);
         shm->tail.store(0);
@@ -60,8 +54,8 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
         sem_init(&shm->space_ready, /*pshared=*/1, RING_CAPACITY);
         shm->magic = SHM_MAGIC;   // set last — readiness flag
 
-        printf("[shm] initialized: generation=%u  capacity=%u  payload_size=%u bytes  total=%zu bytes\n",
-               shm->generation, RING_CAPACITY, payload_size, shm_size(payload_size));
+        printf("[shm] initialized: capacity=%u  payload_size=%u bytes  total=%zu bytes\n",
+               RING_CAPACITY, payload_size, shm_size(payload_size));
 
         flock(fd, LOCK_UN);
         close(fd);
@@ -74,7 +68,8 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
 
     // If the caller passed a non-zero size, verify that it matches
     if (payload_size != 0 && payload_size != existing_payload_size) {
-        fprintf(stderr, "[shm] error: requested payload_size=%u but SHM has payload_size=%u\n",
+        fprintf(stderr,
+                "[shm] error: requested payload_size=%u but SHM has payload_size=%u; use --reset to recreate SHM with the new size\n",
                 payload_size, existing_payload_size);
         flock(fd, LOCK_UN);
         close(fd);
@@ -87,8 +82,8 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
 
     if (shm == MAP_FAILED) { perror("mmap full"); flock(fd, LOCK_UN); close(fd); return nullptr; }
 
-    printf("[shm] attached: generation=%u  capacity=%u  payload_size=%u bytes\n",
-           shm->generation, RING_CAPACITY, existing_payload_size);
+    printf("[shm] attached: capacity=%u  payload_size=%u bytes\n",
+           RING_CAPACITY, existing_payload_size);
 
     flock(fd, LOCK_UN);
     close(fd);

@@ -1,17 +1,13 @@
 #include <cerrno>
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <memory>
 #include <unistd.h>
+#include "../common/payload_source.h"
+#include "../common/runtime_control.h"
 #include "../common/shm_init.h"
-
-static volatile sig_atomic_t g_stop = 0;
-
-static void handle_signal(int) {
-    g_stop = 1;
-}
 
 static void usage(const char* prog) {
     fprintf(stderr, "Usage: %s --size <payload_bytes> [--reset] [--log-interval-ms <ms>] [--shm-name <name>]\n", prog);
@@ -53,16 +49,24 @@ int main(int argc, char* argv[]) {
      SharedMemory* shm = open_shm(payload_size, shm_name);
      if (!shm) return 1;
 
-     std::signal(SIGINT, handle_signal);
-     std::signal(SIGTERM, handle_signal);
+     RuntimeControl control("producer");
 
      srand(static_cast<unsigned>(time(nullptr)));
+     std::unique_ptr<PayloadSource> payload_source = std::make_unique<RandomPayloadSource>();
      uint64_t seq = 0;
      uint64_t next_log_ns = 0;
 
-     printf("[producer] started  shm_name=%s  payload_size=%u bytes  log_interval_ms=%u\n\n", shm_name, payload_size, log_interval_ms);
+     printf("[producer] started  shm_name=%s  payload_size=%u bytes  log_interval_ms=%u\n", shm_name, payload_size, log_interval_ms);
+     control.print_controls();
+     printf("\n");
 
-     while (!g_stop) {
+     while (!control.stopped()) {
+         control.poll_input();
+         if (control.paused()) {
+             control.idle_while_paused();
+             continue;
+         }
+
          timespec ts{};
          clock_gettime(CLOCK_REALTIME, &ts);
          ts.tv_sec += 1;
@@ -71,7 +75,7 @@ int main(int argc, char* argv[]) {
              if (errno == ETIMEDOUT) {
                  continue;
              }
-             if (g_stop) {
+             if (control.stopped()) {
                  break;
              }
              perror("sem_timedwait");
@@ -81,11 +85,8 @@ int main(int argc, char* argv[]) {
          uint32_t tail = shm->tail.load(std::memory_order_relaxed);
          uint8_t* slot = slot_ptr(shm, tail & RING_MASK);
 
-         // Fill the payload with random bytes
          uint8_t* data = slot_data(slot);
-         for (uint32_t i = 0; i < payload_size; i++) {
-             data[i] = static_cast<uint8_t>(rand() % 256);
-         }
+         payload_source->fill(data, payload_size);
 
          // Fill the header after the payload is ready
          PacketHeader* hdr = slot_header(slot);

@@ -23,7 +23,6 @@ static constexpr uint32_t SHM_MAGIC     = 0xDEADBEEF;
 
 struct SharedMemory {
     uint32_t magic;           // initialization flag
-    uint32_t generation;      // increments whenever the SHM region is recreated
     uint32_t payload_size;    // size of one packet payload — set at startup
 
     std::atomic<uint32_t> head;  // moved by consumer

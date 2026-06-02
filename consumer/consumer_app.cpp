@@ -1,16 +1,10 @@
 #include <cerrno>
-#include <csignal>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include "../common/runtime_control.h"
 #include "../common/shm_init.h"
-
-static volatile sig_atomic_t g_stop = 0;
-
-static void handle_signal(int) {
-    g_stop = 1;
-}
 
 static void usage(const char* prog) {
     fprintf(stderr, "Usage: %s [--log-interval-ms <ms>] [--shm-name <name>]\n", prog);
@@ -36,16 +30,26 @@ int main(int argc, char* argv[]) {
     SharedMemory* shm = open_shm(0, shm_name);
     if (!shm) return 1;
 
-    std::signal(SIGINT, handle_signal);
-    std::signal(SIGTERM, handle_signal);
+    RuntimeControl control("consumer");
 
-    uint32_t generation = shm->generation;
+    uint64_t total_packets = 0;
+    uint64_t total_bytes = 0;
+    uint64_t interval_packets = 0;
+    uint64_t interval_bytes = 0;
+    uint64_t interval_started_ns = monotonic_time_ns();
+    uint64_t next_log_ns = interval_started_ns + static_cast<uint64_t>(log_interval_ms) * 1000000ull;
 
-    uint64_t next_log_ns = 0;
+    printf("[consumer] started, waiting for packets  shm_name=%s  log_interval_ms=%u\n", shm_name, log_interval_ms);
+    control.print_controls();
+    printf("\n");
 
-    printf("[consumer] started, waiting for packets  shm_name=%s  log_interval_ms=%u\n\n", shm_name, log_interval_ms);
+    while (!control.stopped()) {
+        control.poll_input();
+        if (control.paused()) {
+            control.idle_while_paused();
+            continue;
+        }
 
-    while (!g_stop) {
         // Wait until at least one packet becomes available
         timespec ts{};
         clock_gettime(CLOCK_REALTIME, &ts);
@@ -55,15 +59,10 @@ int main(int argc, char* argv[]) {
             if (errno == ETIMEDOUT) {
                 continue;
             }
-            if (g_stop) {
+            if (control.stopped()) {
                 break;
             }
             perror("sem_timedwait");
-            break;
-        }
-
-        if (shm->generation != generation) {
-            fprintf(stderr, "[consumer] error: shared memory was recreated, please restart consumer\n");
             break;
         }
 
@@ -77,20 +76,46 @@ int main(int argc, char* argv[]) {
         uint32_t payload_size = hdr->payload_size;
         uint32_t checksum = payload_checksum(data, payload_size);
         bool checksum_ok = (checksum == hdr->checksum);
-        uint64_t latency_ns = monotonic_time_ns() - hdr->timestamp_ns;
-
         uint64_t now_ns = monotonic_time_ns();
-        if (!checksum_ok || log_interval_ms == 0 || now_ns >= next_log_ns) {
-            printf("[consumer] received seq=%-4lu  ts=%llu  latency_ns=%llu  csum=%08x (%s)  size=%u  data=[",
+
+        ++total_packets;
+        total_bytes += payload_size;
+        ++interval_packets;
+        interval_bytes += payload_size;
+
+        if (!checksum_ok) {
+            uint64_t latency_ns = now_ns - hdr->timestamp_ns;
+            printf("[consumer] checksum error  seq=%-4lu  ts=%llu  latency_ns=%llu  expected=%08x  actual=%08x  size=%u  data=[",
                    hdr->sequence,
                    static_cast<unsigned long long>(hdr->timestamp_ns),
                    static_cast<unsigned long long>(latency_ns),
                    hdr->checksum,
-                   checksum_ok ? "ok" : "bad",
+                   checksum,
                    payload_size);
             print_payload_preview(data, payload_size);
             printf("]\n");
             fflush(stdout);
+        }
+
+        if (log_interval_ms == 0 || now_ns >= next_log_ns) {
+            uint64_t elapsed_ns = now_ns - interval_started_ns;
+            double elapsed_sec = elapsed_ns > 0 ? static_cast<double>(elapsed_ns) / 1000000000.0 : 0.0;
+            double packets_per_sec = elapsed_sec > 0.0 ? static_cast<double>(interval_packets) / elapsed_sec : 0.0;
+            double bytes_per_sec = elapsed_sec > 0.0 ? static_cast<double>(interval_bytes) / elapsed_sec : 0.0;
+
+            printf("[consumer] stats  total_packets=%llu  total_bytes=%llu  interval_ms=%.2f  packets=%llu  packets_per_sec=%.2f  bytes=%llu  bytes_per_sec=%.2f\n",
+                   static_cast<unsigned long long>(total_packets),
+                   static_cast<unsigned long long>(total_bytes),
+                   elapsed_sec * 1000.0,
+                   static_cast<unsigned long long>(interval_packets),
+                   packets_per_sec,
+                   static_cast<unsigned long long>(interval_bytes),
+                   bytes_per_sec);
+            fflush(stdout);
+
+            interval_packets = 0;
+            interval_bytes = 0;
+            interval_started_ns = now_ns;
             next_log_ns = now_ns + static_cast<uint64_t>(log_interval_ms) * 1000000ull;
         }
 

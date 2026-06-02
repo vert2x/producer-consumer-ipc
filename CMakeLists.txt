@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Common module — compiled once and linked into both binaries
-add_library(common STATIC common/shm_init.cpp)
+add_library(common STATIC common/shm_init.cpp common/runtime_control.cpp common/payload_source.cpp)
 target_include_directories(common PUBLIC common)
 target_link_libraries(common rt pthread)
 
