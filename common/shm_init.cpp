@@ -8,8 +8,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-SharedMemory* open_shm(uint32_t payload_size) {
-    int fd = shm_open(SHM_NAME, O_CREAT | O_RDWR, 0666);
+SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
+    int fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
     if (fd < 0) { perror("shm_open"); return nullptr; }
 
     flock(fd, LOCK_EX);
@@ -103,8 +103,8 @@ void close_shm(SharedMemory* shm) {
     munmap(shm, shm_size(shm->payload_size));
 }
 
-bool unlink_shm() {
-    if (shm_unlink(SHM_NAME) != 0) {
+bool unlink_shm(const char* shm_name) {
+    if (shm_unlink(shm_name) != 0) {
         perror("shm_unlink");
         return false;
     }

@@ -14,19 +14,27 @@ static void handle_signal(int) {
 }
 
 static void usage(const char* prog) {
-    fprintf(stderr, "Usage: %s --size <payload_bytes> [--reset]\n", prog);
-    fprintf(stderr, "Example: %s --size 64 --reset\n", prog);
+    fprintf(stderr, "Usage: %s --size <payload_bytes> [--reset] [--log-interval-ms <ms>] [--shm-name <name>]\n", prog);
+    fprintf(stderr, "Example: %s --size 64 --reset --log-interval-ms 1000 --shm-name /shm_ipc_demo\n", prog);
 }
 
 
 int main(int argc, char* argv[]) {
+    const char* shm_name = DEFAULT_SHM_NAME;
     uint32_t payload_size = 0;
+    uint32_t log_interval_ms = 1000;
     bool reset = false;
 
        // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--size") == 0 && i + 1 < argc) {
             payload_size = static_cast<uint32_t>(atoi(argv[i + 1]));
+            i++;
+        } else if (strcmp(argv[i], "--log-interval-ms") == 0 && i + 1 < argc) {
+            log_interval_ms = static_cast<uint32_t>(atoi(argv[i + 1]));
+            i++;
+        } else if (strcmp(argv[i], "--shm-name") == 0 && i + 1 < argc) {
+            shm_name = argv[i + 1];
             i++;
         } else if (strcmp(argv[i], "--reset") == 0) {
             reset = true;
@@ -39,10 +47,10 @@ int main(int argc, char* argv[]) {
      }
 
      if (reset) {
-         unlink_shm();
+         unlink_shm(shm_name);
      }
 
-     SharedMemory* shm = open_shm(payload_size);
+     SharedMemory* shm = open_shm(payload_size, shm_name);
      if (!shm) return 1;
 
      std::signal(SIGINT, handle_signal);
@@ -50,8 +58,9 @@ int main(int argc, char* argv[]) {
 
      srand(static_cast<unsigned>(time(nullptr)));
      uint64_t seq = 0;
+     uint64_t next_log_ns = 0;
 
-     printf("[producer] started  payload_size=%u bytes\n\n", payload_size);
+     printf("[producer] started  shm_name=%s  payload_size=%u bytes  log_interval_ms=%u\n\n", shm_name, payload_size, log_interval_ms);
 
      while (!g_stop) {
          timespec ts{};
@@ -72,26 +81,34 @@ int main(int argc, char* argv[]) {
          uint32_t tail = shm->tail.load(std::memory_order_relaxed);
          uint8_t* slot = slot_ptr(shm, tail & RING_MASK);
 
-         // Fill the header
-         PacketHeader* hdr = slot_header(slot);
-         hdr->sequence     = seq++;
-         hdr->payload_size = payload_size;
-
          // Fill the payload with random bytes
          uint8_t* data = slot_data(slot);
          for (uint32_t i = 0; i < payload_size; i++) {
              data[i] = static_cast<uint8_t>(rand() % 256);
          }
 
+         // Fill the header after the payload is ready
+         PacketHeader* hdr = slot_header(slot);
+         hdr->sequence     = seq++;
+         hdr->timestamp_ns = monotonic_time_ns();
+         hdr->payload_size = payload_size;
+         hdr->checksum     = payload_checksum(data, payload_size);
+
          shm->tail.store(tail + 1, std::memory_order_release);
 
-         // Print the first payload bytes for clarity
-         printf("[producer] sent  seq=%-4lu  size=%u  data=[%d, %d, %d ...]\n",
-                hdr->sequence, payload_size, data[0], data[1], data[2]);
-         fflush(stdout);
+         if (log_interval_ms == 0 || hdr->timestamp_ns >= next_log_ns) {
+             printf("[producer] sent  seq=%-4lu  ts=%llu  csum=%08x  size=%u  data=[",
+                    hdr->sequence,
+                    static_cast<unsigned long long>(hdr->timestamp_ns),
+                    hdr->checksum,
+                    payload_size);
+             print_payload_preview(data, payload_size);
+             printf("]\n");
+             fflush(stdout);
+             next_log_ns = hdr->timestamp_ns + static_cast<uint64_t>(log_interval_ms) * 1000000ull;
+         }
 
          sem_post(&shm->data_ready);
-         sleep(1);
      }
 
      close_shm(shm);
