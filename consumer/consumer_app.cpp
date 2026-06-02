@@ -73,7 +73,8 @@ int main(int argc, char* argv[]) {
         // uint8_t slot = head & RING_MASK;
         uint8_t* slot = slot_ptr(shm, head & RING_MASK);
 
-        // acquire: see everything the producer wrote before its release
+        // sem_wait on data_ready synchronizes with the producer's sem_post, so the
+        // slot contents written before publication are visible here.
         PacketHeader* hdr = slot_header(slot);
         uint8_t* data = slot_data(slot);
         uint32_t payload_size = hdr->payload_size;

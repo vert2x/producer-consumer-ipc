@@ -8,7 +8,11 @@ public:
     virtual void fill(uint8_t* data, uint32_t size) = 0;
 };
 
-class RandomPayloadSource final : public PayloadSource {
+class XorShiftPayloadSource final : public PayloadSource {
 public:
+    explicit XorShiftPayloadSource(uint32_t seed = 0x12345678u);
     void fill(uint8_t* data, uint32_t size) override;
+
+private:
+    uint32_t state_;
 };

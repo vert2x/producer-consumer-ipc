@@ -1,8 +1,6 @@
 #include <cerrno>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
-#include <ctime>
 #include <memory>
 #include <unistd.h>
 #include "../common/parse_args.h"
@@ -59,8 +57,7 @@ int main(int argc, char* argv[]) {
 
      RuntimeControl control("producer");
 
-     srand(static_cast<unsigned>(time(nullptr)));
-     std::unique_ptr<PayloadSource> payload_source = std::make_unique<RandomPayloadSource>();
+     std::unique_ptr<PayloadSource> payload_source = std::make_unique<XorShiftPayloadSource>();
      uint64_t seq = 0;
      uint64_t next_log_ns = 0;
 
@@ -96,13 +93,14 @@ int main(int argc, char* argv[]) {
          uint8_t* data = slot_data(slot);
          payload_source->fill(data, payload_size);
 
-         // Fill the header after the payload is ready
+         // Publish the header only after the payload bytes are fully written.
          PacketHeader* hdr = slot_header(slot);
          hdr->sequence     = seq++;
          hdr->timestamp_ns = monotonic_time_ns();
          hdr->payload_size = payload_size;
          hdr->checksum     = payload_checksum(data, payload_size);
 
+         // Release-publish the new tail value after the packet contents are ready.
          shm->tail.store(tail + 1, std::memory_order_release);
 
          if (log_interval_ms == 0 || hdr->timestamp_ns >= next_log_ns) {
