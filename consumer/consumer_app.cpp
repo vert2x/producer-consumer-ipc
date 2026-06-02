@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
+#include "../common/parse_args.h"
 #include "../common/runtime_control.h"
 #include "../common/shm_init.h"
 
@@ -16,7 +17,9 @@ int main(int argc, char* argv[]) {
     uint32_t log_interval_ms = 1000;
     for (int i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--log-interval-ms") == 0 && i + 1 < argc) {
-            log_interval_ms = static_cast<uint32_t>(atoi(argv[i + 1]));
+            if (!require_u32_arg("--log-interval-ms", argv[i + 1], log_interval_ms)) {
+                return 1;
+            }
             ++i;
         } else if (strcmp(argv[i], "--shm-name") == 0 && i + 1 < argc) {
             shm_name = argv[i + 1];

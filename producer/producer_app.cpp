@@ -5,6 +5,7 @@
 #include <ctime>
 #include <memory>
 #include <unistd.h>
+#include "../common/parse_args.h"
 #include "../common/payload_source.h"
 #include "../common/runtime_control.h"
 #include "../common/shm_init.h"
@@ -24,16 +25,23 @@ int main(int argc, char* argv[]) {
        // Parse command-line arguments
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--size") == 0 && i + 1 < argc) {
-            payload_size = static_cast<uint32_t>(atoi(argv[i + 1]));
+            if (!require_u32_arg("--size", argv[i + 1], payload_size)) {
+                return 1;
+            }
             i++;
         } else if (strcmp(argv[i], "--log-interval-ms") == 0 && i + 1 < argc) {
-            log_interval_ms = static_cast<uint32_t>(atoi(argv[i + 1]));
+            if (!require_u32_arg("--log-interval-ms", argv[i + 1], log_interval_ms)) {
+                return 1;
+            }
             i++;
         } else if (strcmp(argv[i], "--shm-name") == 0 && i + 1 < argc) {
             shm_name = argv[i + 1];
             i++;
         } else if (strcmp(argv[i], "--reset") == 0) {
             reset = true;
+        } else {
+            usage(argv[0]);
+            return 1;
         }
     }
 
