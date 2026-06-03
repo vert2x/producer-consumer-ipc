@@ -1,0 +1,16 @@
+[shm] initialized: capacity=8  payload_size=64 bytes  total=784 bytes
+[producer] started  shm_name=/shm_ipc_default  payload_size=64 bytes  log_interval_ms=100
+[producer] controls: S=stop  R=resume
+
+[producer] stats  total_packets=1  packets_per_sec=273973  total_bytes=64  bytes_per_sec=17534247  last_packet_ts=91703577080010
+[producer] stats  total_packets=62925  packets_per_sec=629239  total_bytes=4027200  bytes_per_sec=40271315  last_packet_ts=91703677080121
+[producer] stats  total_packets=167160  packets_per_sec=1042335  total_bytes=10698240  bytes_per_sec=66709439  last_packet_ts=91703777081562
+[producer] stats  total_packets=241784  packets_per_sec=746013  total_bytes=15474176  bytes_per_sec=47744846  last_packet_ts=91703877111962
+[producer] stats  total_packets=356177  packets_per_sec=1143927  total_bytes=22795328  bytes_per_sec=73211350  last_packet_ts=91703977112194
+[producer] stats  total_packets=445111  packets_per_sec=889337  total_bytes=28487104  bytes_per_sec=56917594  last_packet_ts=91704077112486
+[producer] stats  total_packets=525658  packets_per_sec=805340  total_bytes=33642112  bytes_per_sec=51541776  last_packet_ts=91704177128597
+[producer] stats  total_packets=606581  packets_per_sec=809230  total_bytes=38821184  bytes_per_sec=51790703  last_packet_ts=91704277128630
+[producer] stats  total_packets=685136  packets_per_sec=785545  total_bytes=43848704  bytes_per_sec=50274879  last_packet_ts=91704377129268
+[producer] stats  total_packets=753268  packets_per_sec=681314  total_bytes=48209152  bytes_per_sec=43604084  last_packet_ts=91704477130176
+[producer] stats  total_packets=824400  packets_per_sec=711318  total_bytes=52761600  bytes_per_sec=45524361  last_packet_ts=91704577130437
+[producer] final  total_packets=869047  last_packet_ts=91704630783705  total_bytes=55619008

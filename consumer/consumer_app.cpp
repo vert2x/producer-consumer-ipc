@@ -130,10 +130,10 @@ int main(int argc, char* argv[]) {
         sem_post(&shm->space_ready);
     }
 
-    printf("[consumer] final  total_packets=%llu  last_packet_ts=%llu  total_bytes=%llu\n",
+    printf("[consumer] final  total_packets=%llu  total_bytes=%llu  last_packet_ts=%llu\n",
            static_cast<unsigned long long>(total_packets),
-           static_cast<unsigned long long>(last_packet_ts_ns),
-           static_cast<unsigned long long>(total_bytes));
+           static_cast<unsigned long long>(total_bytes),
+           static_cast<unsigned long long>(last_packet_ts_ns));
     fflush(stdout);
 
     close_shm(shm);

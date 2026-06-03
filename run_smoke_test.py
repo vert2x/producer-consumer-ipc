@@ -4,8 +4,12 @@ import subprocess
 import time
 
 root = pathlib.Path(".")
-producer_log = open(root / "producer.log", "w")
-consumer_log = open(root / "consumer.log", "w")
+artifacts_dir = root / "artifacts" / "smoke-test"
+artifacts_dir.mkdir(parents=True, exist_ok=True)
+producer_log_path = artifacts_dir / "producer.log"
+consumer_log_path = artifacts_dir / "consumer.log"
+producer_log = open(producer_log_path, "w")
+consumer_log = open(consumer_log_path, "w")
 
 producer = subprocess.Popen(
     ["build/producer", "--size", "64", "--reset", "--log-interval-ms", "100"],
@@ -33,8 +37,8 @@ producer.wait(timeout=5)
 producer_log.close()
 consumer_log.close()
 
-producer_lines = (root / "producer.log").read_text().splitlines()
-consumer_lines = (root / "consumer.log").read_text().splitlines()
+producer_lines = producer_log_path.read_text().splitlines()
+consumer_lines = consumer_log_path.read_text().splitlines()
 
 print("--- producer.log ---")
 print("\n".join(producer_lines[-12:]))
