@@ -121,14 +121,12 @@ int main(int argc, char* argv[]) {
                 ? static_cast<uint64_t>(static_cast<double>(interval_bytes) / elapsed_sec + 0.5)
                 : 0;
 
-            printf("[producer] stats  total_packets=%llu  last_packet_ts=%llu  total_bytes=%llu  packets=%llu  packets_per_sec=%llu  bytes=%llu  bytes_per_sec=%llu\n",
+            printf("[producer] stats  total_packets=%llu  packets_per_sec=%llu  total_bytes=%llu  bytes_per_sec=%llu  last_packet_ts=%llu\n",
                    static_cast<unsigned long long>(seq),
-                   static_cast<unsigned long long>(last_packet_ts_ns),
-                   static_cast<unsigned long long>(total_bytes),
-                   static_cast<unsigned long long>(interval_packets),
                    static_cast<unsigned long long>(packets_per_sec),
-                   static_cast<unsigned long long>(interval_bytes),
-                   static_cast<unsigned long long>(bytes_per_sec));
+                   static_cast<unsigned long long>(total_bytes),
+                   static_cast<unsigned long long>(bytes_per_sec),
+                   static_cast<unsigned long long>(last_packet_ts_ns));
             fflush(stdout);
 
             interval_packets = 0;
