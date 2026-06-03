@@ -5,12 +5,12 @@
 #include <thread>
 
 namespace {
-    volatile sig_atomic_t g_stop = 0;
+volatile sig_atomic_t g_stop = 0;
 
-    static void handle_signal(int) {
-        g_stop = 1;
-    }
+void handle_signal(int) {
+    g_stop = 1;
 }
+}  // namespace
 
 RuntimeControl::RuntimeControl(const char* app_name)
     : app_name_(app_name) {

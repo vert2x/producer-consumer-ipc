@@ -33,7 +33,10 @@ producer.wait(timeout=5)
 producer_log.close()
 consumer_log.close()
 
+producer_lines = (root / "producer.log").read_text().splitlines()
+consumer_lines = (root / "consumer.log").read_text().splitlines()
+
 print("--- producer.log ---")
-print("\n".join((root / "producer.log").read_text().splitlines()[:12]))
+print("\n".join(producer_lines[-12:]))
 print("--- consumer.log ---")
-print("\n".join((root / "consumer.log").read_text().splitlines()[:12]))
+print("\n".join(consumer_lines[-12:]))

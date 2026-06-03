@@ -1,6 +1,5 @@
 #include <cerrno>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <unistd.h>
 #include "../common/parse_args.h"
