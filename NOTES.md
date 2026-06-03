@@ -21,6 +21,8 @@ After the consumer resumes, packet flow continues normally.
 
 ## Payload size changes
 
+The default shared-memory name is `/shm_ipc_default`.
+
 If the producer is restarted with a different payload size for the same SHM name, start it with `--reset` to recreate the shared memory region.
 After such a reset, restart the consumer as well so it can attach to the new region.
 

@@ -11,7 +11,7 @@ cmake --build build
 
 ## Run
 
-Default shared-memory name:
+Default shared-memory name: `/shm_ipc_default`
 
 ```sh
 build/producer --size 64 --reset
@@ -21,8 +21,8 @@ build/consumer
 Custom shared-memory name:
 
 ```sh
-build/producer --size 64 --reset --shm-name /shm_ipc_demo
-build/consumer --shm-name /shm_ipc_demo
+build/producer --size 64 --reset --shm-name <your_custom_name>
+build/consumer --shm-name <your_custom_name>
 ```
 
 ## CLI options
@@ -33,14 +33,14 @@ build/consumer --shm-name /shm_ipc_demo
 --size <payload_bytes>          required payload size
 --reset                         recreate shared memory before start
 --log-interval-ms <ms>          log interval in milliseconds
---shm-name <name>               POSIX shared-memory object name
+--shm-name <name>               POSIX shared-memory object name (default: `/shm_ipc_default`)
 ```
 
 ### Consumer
 
 ```text
 --log-interval-ms <ms>          stats interval in milliseconds
---shm-name <name>               POSIX shared-memory object name
+--shm-name <name>               POSIX shared-memory object name (default: `/shm_ipc_default`)
 ```
 
 ## Pause / resume behavior
@@ -67,7 +67,7 @@ After the consumer resumes, flow continues normally.
 If the producer is restarted with a different payload size for the same SHM name, start it with `--reset` to recreate the shared-memory region:
 
 ```sh
-build/producer --size 128 --reset --shm-name /shm_ipc_demo
+build/producer --size 128 --reset --shm-name <your_custom_name>
 ```
 
 After such a reset, restart the consumer too so it attaches to the new shared-memory region.

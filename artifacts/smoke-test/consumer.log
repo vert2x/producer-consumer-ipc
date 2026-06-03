@@ -2,14 +2,14 @@
 [consumer] started, waiting for packets  shm_name=/shm_ipc_default  log_interval_ms=100
 [consumer] controls: S=stop  R=resume
 
-[consumer] stats  total_packets=124117  packets_per_sec=1241130  total_bytes=7943488  bytes_per_sec=79432329  last_packet_ts=91703727281123
-[consumer] stats  total_packets=211659  packets_per_sec=875395  total_bytes=13546176  bytes_per_sec=56025258  last_packet_ts=91703827283860
-[consumer] stats  total_packets=295534  packets_per_sec=838544  total_bytes=18914176  bytes_per_sec=53666796  last_packet_ts=91703927308138
-[consumer] stats  total_packets=399646  packets_per_sec=1041102  total_bytes=25577344  bytes_per_sec=66630539  last_packet_ts=91704027311435
-[consumer] stats  total_packets=485471  packets_per_sec=857983  total_bytes=31070144  bytes_per_sec=54910892  last_packet_ts=91704127340500
-[consumer] stats  total_packets=567179  packets_per_sec=817079  total_bytes=36299456  bytes_per_sec=52293029  last_packet_ts=91704227367988
-[consumer] stats  total_packets=635700  packets_per_sec=685133  total_bytes=40684800  bytes_per_sec=43848493  last_packet_ts=91704327280252
-[consumer] stats  total_packets=717207  packets_per_sec=814941  total_bytes=45901248  bytes_per_sec=52156230  last_packet_ts=91704427368016
-[consumer] stats  total_packets=792567  packets_per_sec=753469  total_bytes=50724288  bytes_per_sec=48222009  last_packet_ts=91704527383808
-[consumer] stats  total_packets=867560  packets_per_sec=749895  total_bytes=55523840  bytes_per_sec=47993300  last_packet_ts=91704627391235
-[consumer] final  total_packets=869047  last_packet_ts=91704630783705  total_bytes=55619008
+[consumer] stats  total_packets=71639  packets_per_sec=716388  total_bytes=4584896  bytes_per_sec=45848839  last_packet_ts=93542293252851
+[consumer] stats  total_packets=144700  packets_per_sec=730610  total_bytes=9260800  bytes_per_sec=46759009  last_packet_ts=93542393250651
+[consumer] stats  total_packets=216107  packets_per_sec=714067  total_bytes=13830848  bytes_per_sec=45700313  last_packet_ts=93542493245440
+[consumer] stats  total_packets=291901  packets_per_sec=757937  total_bytes=18681664  bytes_per_sec=48507951  last_packet_ts=93542593252921
+[consumer] stats  total_packets=358299  packets_per_sec=663860  total_bytes=22931136  bytes_per_sec=42487018  last_packet_ts=93542693245928
+[consumer] stats  total_packets=446759  packets_per_sec=884476  total_bytes=28592576  bytes_per_sec=56606451  last_packet_ts=93542793262169
+[consumer] stats  total_packets=574672  packets_per_sec=1279127  total_bytes=36779008  bytes_per_sec=81864137  last_packet_ts=93542893290390
+[consumer] stats  total_packets=649138  packets_per_sec=744659  total_bytes=41544832  bytes_per_sec=47658189  last_packet_ts=93542993258638
+[consumer] stats  total_packets=785432  packets_per_sec=1362719  total_bytes=50267648  bytes_per_sec=87213986  last_packet_ts=93543093281308
+[consumer] stats  total_packets=859183  packets_per_sec=737510  total_bytes=54987712  bytes_per_sec=47200629  last_packet_ts=93543193304596
+[consumer] final  total_packets=859198  total_bytes=54988672  last_packet_ts=93543193391602

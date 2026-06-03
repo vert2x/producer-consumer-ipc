@@ -8,7 +8,8 @@
 
 static void usage(const char* prog) {
     fprintf(stderr, "Usage: %s [--log-interval-ms <ms>] [--shm-name <name>]\n", prog);
-    fprintf(stderr, "Example: %s --log-interval-ms 1000 --shm-name /shm_ipc_demo\n", prog);
+    fprintf(stderr, "Example: %s --log-interval-ms 1000 --shm-name <your_custom_name>\n", prog);
+    fprintf(stderr, "Default SHM name: %s\n", DEFAULT_SHM_NAME);
 }
 
 int main(int argc, char* argv[]) {
