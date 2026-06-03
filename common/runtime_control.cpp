@@ -1,26 +1,21 @@
 #include "runtime_control.h"
 
+#include <chrono>
 #include <cstdio>
-#include <unistd.h>
-
-#include "terminal_control.h"
+#include <thread>
 
 namespace {
-volatile sig_atomic_t g_stop = 0;
-TerminalControl* g_terminal = nullptr;
+    volatile sig_atomic_t g_stop = 0;
 
-void handle_signal(int) {
-    g_stop = 1;
+    static void handle_signal(int) {
+        g_stop = 1;
+    }
 }
-}  // namespace
 
 RuntimeControl::RuntimeControl(const char* app_name)
     : app_name_(app_name) {
     std::signal(SIGINT, handle_signal);
     std::signal(SIGTERM, handle_signal);
-
-    static TerminalControl terminal;
-    g_terminal = &terminal;
 }
 
 RuntimeControl::~RuntimeControl() = default;
@@ -34,7 +29,7 @@ bool RuntimeControl::paused() const {
 }
 
 bool RuntimeControl::terminal_enabled() const {
-    return g_terminal != nullptr && g_terminal->enabled();
+    return terminal_.enabled();
 }
 
 void RuntimeControl::print_controls() const {
@@ -48,7 +43,7 @@ void RuntimeControl::poll_input() {
         return;
     }
 
-    int ch = g_terminal->read_char();
+    int ch = terminal_.read_char();
     if (ch == 's' || ch == 'S') {
         if (!paused_) {
             paused_ = true;
@@ -65,5 +60,5 @@ void RuntimeControl::poll_input() {
 }
 
 void RuntimeControl::idle_while_paused() const {
-    usleep(10000);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

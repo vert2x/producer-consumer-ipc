@@ -2,6 +2,8 @@
 
 #include <csignal>
 
+#include "terminal_control.h"
+
 class RuntimeControl {
 public:
     explicit RuntimeControl(const char* app_name);
@@ -18,4 +20,5 @@ public:
 private:
     const char* app_name_;
     bool paused_ = false;
+    TerminalControl terminal_;
 };

@@ -70,7 +70,11 @@ SharedMemory* open_shm(uint32_t payload_size, const char* shm_name) {
             close(fd);
             return nullptr;
         }
-        ftruncate(fd, static_cast<off_t>(shm_size(payload_size)));
+        if (ftruncate(fd, static_cast<off_t>(shm_size(payload_size))) != 0) {
+            perror("ftruncate");
+            close(fd);
+            return nullptr;
+        }
     }
 
     // At this point, the SHM size is already set (either by us or by the first process)

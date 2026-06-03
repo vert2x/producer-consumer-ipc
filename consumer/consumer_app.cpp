@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
     uint64_t total_bytes = 0;
     uint64_t interval_packets = 0;
     uint64_t interval_bytes = 0;
+    uint64_t last_packet_ts_ns = 0;
     uint64_t interval_started_ns = monotonic_time_ns();
     uint64_t next_log_ns = interval_started_ns + static_cast<uint64_t>(log_interval_ms) * 1000000ull;
 
@@ -81,6 +82,7 @@ int main(int argc, char* argv[]) {
         uint32_t checksum = payload_checksum(data, payload_size);
         bool checksum_ok = (checksum == hdr->checksum);
         uint64_t now_ns = monotonic_time_ns();
+        last_packet_ts_ns = hdr->timestamp_ns;
 
         ++total_packets;
         total_bytes += payload_size;
@@ -104,17 +106,21 @@ int main(int argc, char* argv[]) {
         if (log_interval_ms == 0 || now_ns >= next_log_ns) {
             uint64_t elapsed_ns = now_ns - interval_started_ns;
             double elapsed_sec = elapsed_ns > 0 ? static_cast<double>(elapsed_ns) / 1000000000.0 : 0.0;
-            double packets_per_sec = elapsed_sec > 0.0 ? static_cast<double>(interval_packets) / elapsed_sec : 0.0;
-            double bytes_per_sec = elapsed_sec > 0.0 ? static_cast<double>(interval_bytes) / elapsed_sec : 0.0;
+            uint64_t packets_per_sec = elapsed_sec > 0.0
+                ? static_cast<uint64_t>(static_cast<double>(interval_packets) / elapsed_sec + 0.5)
+                : 0;
+            uint64_t bytes_per_sec = elapsed_sec > 0.0
+                ? static_cast<uint64_t>(static_cast<double>(interval_bytes) / elapsed_sec + 0.5)
+                : 0;
 
-            printf("[consumer] stats  total_packets=%llu  total_bytes=%llu  interval_ms=%.2f  packets=%llu  packets_per_sec=%.2f  bytes=%llu  bytes_per_sec=%.2f\n",
+            printf("[consumer] stats  total_packets=%llu  last_packet_ts=%llu  total_bytes=%llu  packets=%llu  packets_per_sec=%llu  bytes=%llu  bytes_per_sec=%llu\n",
                    static_cast<unsigned long long>(total_packets),
+                   static_cast<unsigned long long>(last_packet_ts_ns),
                    static_cast<unsigned long long>(total_bytes),
-                   elapsed_sec * 1000.0,
                    static_cast<unsigned long long>(interval_packets),
-                   packets_per_sec,
+                   static_cast<unsigned long long>(packets_per_sec),
                    static_cast<unsigned long long>(interval_bytes),
-                   bytes_per_sec);
+                   static_cast<unsigned long long>(bytes_per_sec));
             fflush(stdout);
 
             interval_packets = 0;
@@ -126,6 +132,12 @@ int main(int argc, char* argv[]) {
         shm->head.store(head + 1, std::memory_order_release);
         sem_post(&shm->space_ready);
     }
+
+    printf("[consumer] final  total_packets=%llu  last_packet_ts=%llu  total_bytes=%llu\n",
+           static_cast<unsigned long long>(total_packets),
+           static_cast<unsigned long long>(last_packet_ts_ns),
+           static_cast<unsigned long long>(total_bytes));
+    fflush(stdout);
 
     close_shm(shm);
     return 0;

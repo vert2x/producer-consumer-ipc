@@ -23,3 +23,8 @@ After the consumer resumes, packet flow continues normally.
 
 If the producer is restarted with a different payload size for the same SHM name, start it with `--reset` to recreate the shared memory region.
 After such a reset, restart the consumer as well so it can attach to the new region.
+
+## Byte counters
+
+`total_bytes` and per-interval `bytes` count payload bytes only.
+Packet header bytes are not included in these counters.
